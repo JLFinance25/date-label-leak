@@ -3,6 +3,25 @@
 **Status: final text approved by Jayden Ling (Oct 15, 2026).**
 **Credit:** Code, analysis and this text drafted by Claude (AI); directed and checked by Jayden Ling.
 
+## Abstract
+**Objective.** Test whether a real month label alone pulls an AI model's forecast toward what the US economy actually
+did next, when the numbers it sees are made up.
+**Data and method.** 20 made-up AR(1) monthly series, each shown with 99 real month labels (every 4th month, Jan 1990
+to Sep 2022) at month, quarter and year precision, and with a neutral label ("month t"). Models: Gemini 3.8 Flash
+(`gemini-3.8-flash`, queried Oct 12-13, 2026) and Gemma 4 E2B, E4B and 12B (Ollama, local). The leak is the slope of
+the forecast shift against the real 3-month change in US Industrial Production (FRED INDPRO, 1,292 monthly rows,
+pulled Oct 12, 2026), holding the past 3 months fixed, with a 10,000-draw bootstrap. The test and its 0.03 bar were
+pre-registered.
+**Findings.** Gemini 3.8 Flash leaks: slope +0.11 [95% range +0.08, +0.21] noise units per percentage point, about a
+sixth of a full leak, robust to all three planned checks. Quarter labels still leak (+0.08 [+0.05, +0.18]); year
+labels shrink it about tenfold (+0.01 [-0.00, +0.06], can't tell). The Gemma models show no leak but don't know the
+history. In real units, the label "January 2020" alone moved Gemini's forecast down about 0.75 percentage points per
+forecast month.
+**What's new.** Earlier date tests used real economic numbers, so the date and familiar numbers were tangled. Here
+the numbers are made up, so only the date can carry the leak, and it is measured at three date precisions.
+**Practical use.** Back-tests of AI forecasters that hide names but keep month or quarter labels can still leak;
+blur dates to the year or test after the model's training cutoff.
+
 ## The short answer
 Yes, for the one model that knows the history. When Gemini 3.8 Flash saw made-up numbers labeled with a real
 month (like "January 2020"), its forecast leaned toward what US industry actually did in the 3 months after that
@@ -41,6 +60,11 @@ The 95% ranges in brackets come from 10,000 bootstrap re-draws of the dates (see
   the 0.03 bar, so by the pre-registered wording it is "a leak, at least the size worth caring about".
 - **Size.** On our own yardstick (PREREG 6.4), a model that fully used the future would score about 0.64, so this
   is roughly a sixth of a full leak.
+- **In real units** (Claude's arithmetic on `results/main/date_shifts_gemini-3.8-flash.csv`, converting with the
+  median noise size of the 20 series, 0.57 percentage points of monthly change; approximate, since each series has
+  its own noise size): each percentage point of real 3-month change moved the forecast about 0.065 points per
+  forecast month. Across the 99 month labels, the date alone moved the forecast about 0.13 points per month on
+  average (0.22 noise units), about a fifth of one month's random wobble.
 - **It held up under every planned check.**
   - Dropping the COVID dates: +0.18 [+0.12, +0.24].
   - A rank-based version (less sensitive to extreme months): correlation +0.65 [+0.50, +0.77].
@@ -52,9 +76,11 @@ The 95% ranges in brackets come from 10,000 bootstrap re-draws of the dates (see
 **Two dates that show it** (`results/main/date_shifts_gemini-3.8-flash.csv`; real changes from Industrial
 Production, FRED, pulled Oct 12, 2026; revised data as of that date, not what was first published):
 - **January 2020.** The index's last 3 months were nearly flat (-0.4%); the next 3 months fell 16.3% (COVID). With
-  the same made-up numbers and the label "January 2020", the forecast dropped by 1.3 noise units.
+  the same made-up numbers and the label "January 2020", the forecast dropped by 1.3 noise units (about 0.75
+  percentage points per forecast month, using the median noise size).
 - **May 2009.** The last 3 months had fallen 3.4%; the next 3 rose 1.9%. With the label "May 2009", the forecast
-  went *up* by 0.6 noise units, against the recent past, toward the recovery that came next.
+  went *up* by 0.6 noise units (about 0.32 points per month), against the recent past, toward the recovery that
+  came next.
 
 **Blurring the date (descriptive, not a separate yes/no test):**
 
@@ -101,6 +127,21 @@ Suppose you test an AI forecaster on past data, hiding company names but keeping
 date alone then moved the forecast toward what happened next, though part may be knowledge of the time rather than
 memory of what followed. In this test, a quarter label was not blurry enough.
 
+**Who this is for.** Research groups that back-test AI forecasters on historical economic or financial data. The
+decision it informs: whether hiding names is enough, or whether dates must be blurred to the year or the test moved
+after the model's training cutoff. To reuse it you need the model's API or local weights, the scripts in `src/`, and
+about 4,800 prompts per model (3 replies each for a model that can't run at temperature 0; about $8 of cloud credit
+for Gemini 3.8 Flash here). Run it once per model version before trusting a back-test.
+
+## What's new
+The closest work we know (abstracts read Nov 15, 2026): Fake Date Tests (Eliseev and Seleznev, arXiv 2601.07992)
+moves the dates on real macro forecasting prompts and finds lookahead bias in every model tested; HindsightBench (Jia,
+arXiv 2607.18867) runs a date-only arm on a real, vintage-correct macro panel across 15 models and calls the leak's
+existence "settled"; The Memorization Problem (Lopez-Lira, Tang and Zhu, arXiv 2504.14765) shows models recall exact
+economic values and rebuild masked dates. **What this study adds:** the numbers are made up, so only the date label
+can carry outside knowledge, and the leak is measured as a slope at three date precisions. It does not claim to be
+the first to find a date leak.
+
 ## What this study can't tell you
 - **Remembering the future vs. knowing the mood of the time.** We held the index's own past fixed, but not other
   news known *at* the label month. Part of the pull could come from that, not from memory of what came later. The
@@ -132,6 +173,21 @@ memory of what followed. In this test, a quarter label was not blurry enough.
   domain, citation requested).
 - NBER US business-cycle dates (context only): https://www.nber.org/research/data/us-business-cycle-expansions-and-contractions
   (pulled Oct 12, 2026). Source: NBER.
+- Data sizes and terms: INDPRO.csv has 1,292 monthly rows (Jan 1919 to Aug 2026, 24 KB; public domain, citation
+  requested). The NBER table is 21 KB (copy allowed with attribution). Saved replies: 14,100 Gemini and 14,100 Gemma
+  forecast replies plus quiz replies in `data/runs/`. Gemma 4 is Apache 2.0. Gemini output falls under Google Cloud's
+  Service Specific Terms (read Oct 16, 2026): Google claims no ownership of output, and output may not be used to
+  build a competing model. Full list: `data/raw/SOURCES.md`.
 - Models: Gemma 4 E2B, E4B, 12B (Ollama; IDs in `PREREG.md` 5.1), and Gemini 3.8 Flash on Google Cloud's Gemini
   platform (Oct 12 to 13, 2026). Cost: about $8 of cloud credit in total. The main run is estimated at $7.23 from
   token counts and not checked against the Google bill (UNVERIFIED); the rest was a cost test and a connection test.
+
+## AI use and credit
+- Models tested: Gemini 3.8 Flash (`gemini-3.8-flash`, stable, Google Cloud, thinking "low", queried Oct 12-13,
+  2026); Gemma 4 E2B, E4B and 12B (Ollama IDs 45d11505b91d, eb2177adf764, c7597fc90b86; nvfp4; Ollama 0.40.3;
+  Apache 2.0).
+- Code, analysis and this text drafted by Claude (Anthropic). The private project log (the public `WORKLOG.md` is a
+  trimmed summary) records Claude Sonnet 5.5 and Claude Opus 5.5 for the Oct 15, 2026 polish passes and Claude Opus
+  5.5 for the Nov 15, 2026 draft fixes; the Claude model used in earlier sessions is not recorded (UNVERIFIED).
+  Directed and checked by Jayden Ling.
+- No teacher, mentor or other adult helped with this work; all help came from the AI tools named above.
