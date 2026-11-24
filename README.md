@@ -121,3 +121,7 @@ Opus 5.5 for the Oct 15, 2026 polish passes and Claude Opus 5.5 for the Nov 15, 
 in earlier sessions is not recorded (UNVERIFIED).
 
 No teacher, mentor or other adult helped with this work; all help came from the AI tools named above.
+
+## Related papers
+
+More pre-registered studies by Jayden Ling are on Zenodo: [all papers](https://zenodo.org/search?q=creators.name%3A%22Ling%2C%20Jayden%22). Flagship: *When do operations-research models beat simple baselines on public data? 38 pre-specified tests*, [doi:10.5281/zenodo.24280952](https://doi.org/10.5281/zenodo.24280952). This repo has no Zenodo record of its own yet. Sibling repos: [number-guard](https://github.com/JLFinance25/number-guard), [phantom-answers](https://github.com/JLFinance25/phantom-answers), [date-label-leak](https://github.com/JLFinance25/date-label-leak), [february-cliff](https://github.com/JLFinance25/february-cliff), [chronology-pairs](https://github.com/JLFinance25/chronology-pairs).
